@@ -1,9 +1,11 @@
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.optimizers import SGD
+from keras.layers.recurrent import SimpleDeepRNN
 from keras.preprocessing import sequence
 import numpy as np
 from time import time
+from theano import *
 
 def create_columnwise_normalizers(nparray):
     """
@@ -65,29 +67,31 @@ y_test = y_test.reshape(-1, 1)
 
 input_dimension = X_train.shape[1]
 
-X_train = sequence.pad_sequences(X_train)
-X_test = sequence.pad_sequences(X_test)
+new_train = theano.shared(np.array((X_train, X_train, X_train)))
+new_test = theano.shared(np.array((X_test, X_test, X_test)))
+new_train = theano.shared(np.array((X_train, X_train, X_train)).reshape(399, 3, 13))
+new_test = theano.shared(np.array((X_test, X_test, X_test)).reshape(107, 3, 13))
+
 
 print "Building a model"
 print ""
 model = Sequential()
-model.add(Dense(input_dimension, input_dimension*2, init='uniform'))
-model.add(Activation('tanh'))
-model.add(Dropout(0.5))
-model.add(Dense(input_dimension*2, input_dimension*2, init='uniform'))
-model.add(Activation('tanh'))
-model.add(Dropout(0.5))
-model.add(Dense(input_dimension*2, 1, init='uniform'))
+model.add(SimpleDeepRNN(input_dimension, input_dimension*2))
+model.add(SimpleDeepRNN(input_dimension*2, input_dimension*2))
+model.add(SimpleDeepRNN(input_dimension*2, input_dimension*2))
+model.add(SimpleDeepRNN(input_dimension*2, input_dimension*2))
+model.add(SimpleDeepRNN(input_dimension*2, input_dimension*2))
+model.add(SimpleDeepRNN(input_dimension*2, 1, init = 'uniform', activation='tanh', inner_activation='tanh'))
 
 sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='mean_squared_error', optimizer=sgd)
 
 print "Fitting the model"
 print ""
-model.fit(X_train, y_train / np.max(y_train) , nb_epoch=100, batch_size=(0.1 * X_train.shape[0]), verbose=2)
+model.fit(new_train, y_train / np.max(y_train), nb_epoch=100, batch_size=(0.1 * X_train.shape[0]), verbose=2)
 
 # calculate a mse score
-score = model.evaluate(X_test, y_test / np.max(y_test) /10, batch_size=0.1 * X_test.shape[1])
+score = model.evaluate(new_test, y_test / np.max(y_test) /10, batch_size=0.1 * X_test.shape[1])
 
 #Make predictions
 print "Making predictions"
