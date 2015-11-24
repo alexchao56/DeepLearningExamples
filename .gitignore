@@ -58,3 +58,9 @@ target/
 
 #Ipython notebook checkpoints
 +.ipynb_checkpoints/
+
+#venv
+tf_venv/
+
+#MNIST
+MNIST_data/
