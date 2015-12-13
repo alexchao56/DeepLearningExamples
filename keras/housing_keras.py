@@ -71,6 +71,7 @@ X_test = sequence.pad_sequences(X_test)
 print "Building a model"
 print ""
 model = Sequential()
+print input_dimension
 model.add(Dense(input_dimension, input_dimension*2, init='uniform'))
 model.add(Activation('tanh'))
 model.add(Dropout(0.5))
